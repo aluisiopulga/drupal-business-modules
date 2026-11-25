@@ -49,6 +49,16 @@ jobs:
         with:
           php-version: '8.3'
           coverage: none
-      - run: composer global require drupal/coder --no-interaction --no-progress
-      - run: ~/.composer/vendor/bin/phpcs --config-set installed_paths ~/.composer/vendor/drupal/coder/coder_sniffer,~/.composer/vendor/sirbrillig/phpcs-variable-analysis,~/.composer/vendor/slevomat/coding-standard
-      - run: ~/.composer/vendor/bin/phpcs
+      - name: Install drupal/coder
+        run: |
+          composer global config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+          composer global require drupal/coder --no-interaction --no-progress
+          composer global config bin-dir --absolute --quiet >> "$GITHUB_PATH"
+      - name: Register the Drupal standards
+        run: |
+          VENDOR=$(composer global config vendor-dir --absolute --quiet)
+          phpcs --config-set installed_paths "$VENDOR/drupal/coder/coder_sniffer,$VENDOR/sirbrillig/phpcs-variable-analysis,$VENDOR/slevomat/coding-standard"
+      - name: List installed standards
+        run: phpcs -i
+      - name: Run phpcs
+        run: phpcs

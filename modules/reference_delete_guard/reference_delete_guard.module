@@ -84,9 +84,10 @@ function reference_delete_guard_form_alter(array &$form, FormStateInterface $for
   $arguments = ['%label' => $entity->label(), '@references' => $counter->summarize($counts)];
 
   if ($form_object->getOperation() === 'delete') {
+    $explanation = t('%label cannot be deleted: @references still reference it. Deleting it would leave them pointing to nothing.', $arguments);
+    $advice = t('To fix its name or details, edit it instead. To delete it, reassign or delete the referencing content first.');
     $form['description'] = [
-      '#markup' => '<p>' . t('%label cannot be deleted: @references still reference it. Deleting it would leave them pointing to nothing.', $arguments) . '</p>'
-      . '<p>' . t('To fix its name or details, edit it instead. To delete it, reassign or delete the referencing content first.') . '</p>',
+      '#markup' => '<p>' . $explanation . '</p><p>' . $advice . '</p>',
     ];
     $form['actions']['submit']['#access'] = FALSE;
     return;
