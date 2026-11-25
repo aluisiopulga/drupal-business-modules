@@ -1,0 +1,5 @@
+services:
+  field_audit_log.logger:
+    class: Drupal\field_audit_log\AuditLogger
+    arguments: ['@database', '@config.factory', '@current_user', '@request_stack', '@datetime.time']
+  Drupal\field_audit_log\AuditLogger: '@field_audit_log.logger'

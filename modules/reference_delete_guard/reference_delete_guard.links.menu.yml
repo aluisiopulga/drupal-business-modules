@@ -1,0 +1,5 @@
+reference_delete_guard.settings:
+  title: 'Reference delete guard'
+  description: 'Protect referenced content from deletion.'
+  route_name: reference_delete_guard.settings
+  parent: system.admin_config_content

@@ -1,0 +1,10 @@
+reference_delete_guard.settings:
+  type: config_object
+  label: 'Reference delete guard settings'
+  mapping:
+    protected:
+      type: sequence
+      label: 'Protected bundles'
+      sequence:
+        type: string
+        label: 'Entity type and bundle, as "entity_type:bundle"'

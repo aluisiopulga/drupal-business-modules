@@ -1,0 +1,54 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  phpunit:
+    name: Drupal ${{ matrix.drupal }} / PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - drupal: '10.3'
+            php: '8.1'
+          - drupal: '10'
+            php: '8.3'
+          - drupal: '11'
+            php: '8.3'
+    env:
+      SIMPLETEST_DB: 'sqlite://localhost/sites/simpletest/db.sqlite'
+      SIMPLETEST_BASE_URL: 'http://localhost'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: repo
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: gd, pdo_sqlite, sqlite3
+          coverage: none
+      - name: Create a Drupal ${{ matrix.drupal }} site
+        run: |
+          composer create-project drupal/recommended-project:^${{ matrix.drupal }} drupal --no-interaction --no-progress
+          cd drupal
+          composer require --dev drupal/core-dev:^${{ matrix.drupal }} --no-interaction --no-progress -W
+          mkdir -p web/modules/custom web/sites/simpletest
+          cp -r ../repo/modules/* web/modules/custom/
+      - name: Run PHPUnit (unit and kernel tests)
+        working-directory: drupal/web
+        run: ../vendor/bin/phpunit -c core modules/custom
+
+  coding-standards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+      - run: composer global require drupal/coder --no-interaction --no-progress
+      - run: ~/.composer/vendor/bin/phpcs --config-set installed_paths ~/.composer/vendor/drupal/coder/coder_sniffer,~/.composer/vendor/sirbrillig/phpcs-variable-analysis,~/.composer/vendor/slevomat/coding-standard
+      - run: ~/.composer/vendor/bin/phpcs

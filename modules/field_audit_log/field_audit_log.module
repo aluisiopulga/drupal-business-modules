@@ -1,0 +1,63 @@
+<?php
+
+/**
+ * @file
+ * Records who created, changed or deleted tracked content.
+ *
+ * Every path that saves through the Entity API is recorded: forms, bulk
+ * actions, REST, migrations, drush. Writes made directly in the database,
+ * outside Drupal, are not.
+ */
+
+declare(strict_types=1);
+
+use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function field_audit_log_help(string $route_name, RouteMatchInterface $route_match): ?string {
+  if ($route_name === 'help.page.field_audit_log' || $route_name === 'field_audit_log.settings') {
+    return '<p>' . t('For the selected content types, every creation, change and deletion is recorded with the user, the date, the page where it happened and the value of each changed field before and after. Entries are kept after the content is deleted.') . '</p>';
+  }
+
+  return NULL;
+}
+
+/**
+ * Implements hook_entity_insert().
+ */
+function field_audit_log_entity_insert(EntityInterface $entity): void {
+  if ($entity instanceof ContentEntityInterface) {
+    \Drupal::service('field_audit_log.logger')->log($entity, 'create');
+  }
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function field_audit_log_entity_update(EntityInterface $entity): void {
+  if ($entity instanceof ContentEntityInterface) {
+    // Drupal 11.2 added getOriginal(); older versions use ->original.
+    $original = method_exists($entity, 'getOriginal') ? $entity->getOriginal() : ($entity->original ?? NULL);
+    \Drupal::service('field_audit_log.logger')->log($entity, 'update', $original instanceof ContentEntityInterface ? $original : NULL);
+  }
+}
+
+/**
+ * Implements hook_entity_predelete().
+ */
+function field_audit_log_entity_predelete(EntityInterface $entity): void {
+  if ($entity instanceof ContentEntityInterface) {
+    \Drupal::service('field_audit_log.logger')->log($entity, 'delete');
+  }
+}
+
+/**
+ * Implements hook_cron().
+ */
+function field_audit_log_cron(): void {
+  \Drupal::service('field_audit_log.logger')->purge();
+}

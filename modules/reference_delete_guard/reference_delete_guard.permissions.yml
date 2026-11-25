@@ -1,0 +1,4 @@
+administer reference delete guard:
+  title: 'Administer reference delete guard'
+  description: 'Choose which content is protected from deletion while referenced.'
+  restrict access: true

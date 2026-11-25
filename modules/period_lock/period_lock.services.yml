@@ -1,0 +1,5 @@
+services:
+  period_lock.checker:
+    class: Drupal\period_lock\PeriodLockChecker
+    arguments: ['@config.factory', '@entity_type.manager']
+  Drupal\period_lock\PeriodLockChecker: '@period_lock.checker'

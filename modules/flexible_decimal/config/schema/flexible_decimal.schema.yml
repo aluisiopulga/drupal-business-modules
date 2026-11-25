@@ -1,0 +1,13 @@
+field.widget.settings.flexible_decimal:
+  type: mapping
+  label: 'Flexible decimal widget settings'
+  mapping:
+    placeholder:
+      type: label
+      label: 'Placeholder'
+    decimal_separator:
+      type: string
+      label: 'Decimal separator used to display the current value'
+    allow_thousands_separator:
+      type: boolean
+      label: 'Accept thousands separators (1.234.567,89 or 1,234,567.89)'

@@ -1,0 +1,121 @@
+<?php
+
+/**
+ * @file
+ * Notices that must be acknowledged before using the site again.
+ *
+ * The pending notice is written straight into the HTML at the end of every
+ * page (hook_page_bottom), not as a lazy placeholder: placeholders for
+ * logged-in users are filled by BigPipe with JavaScript, so a user with
+ * JavaScript blocked or broken would never see the notice. Written in the
+ * HTML, with a pure-CSS overlay, it always appears.
+ */
+
+declare(strict_types=1);
+
+use Drupal\acknowledgement_notices\Form\AcknowledgeForm;
+use Drupal\acknowledgement_notices\NoticeRepository;
+use Drupal\Component\Utility\Html;
+use Drupal\Core\Render\Markup;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Url;
+use Drupal\user\UserInterface;
+
+/**
+ * Implements hook_help().
+ */
+function acknowledgement_notices_help(string $route_name, RouteMatchInterface $route_match): ?string {
+  if ($route_name === 'help.page.acknowledgement_notices') {
+    return '<p>' . t('Users with the "Send acknowledgement notices" permission send notices to everyone or to selected users. On their next page, recipients see the notice over the site and must click "I have read and understood" to continue. The notice page shows who acknowledged and when. A notice can be edited or deleted only until the first acknowledgement.') . '</p>';
+  }
+
+  return NULL;
+}
+
+/**
+ * Implements hook_page_bottom().
+ */
+function acknowledgement_notices_page_bottom(array &$page_bottom): void {
+  $account = \Drupal::currentUser();
+  $route = (string) \Drupal::routeMatch()->getRouteName();
+  if ($account->isAnonymous() || in_array($route, NoticeRepository::FREE_ROUTES, TRUE)) {
+    return;
+  }
+
+  // Built on every request and never cached: it must not be served from cache
+  // to someone who already acknowledged it, nor missed by someone who didn't.
+  $page_bottom['acknowledgement_notices'] = ['#cache' => ['max-age' => 0]];
+
+  /** @var \Drupal\acknowledgement_notices\NoticeRepository $repository */
+  $repository = \Drupal::service('acknowledgement_notices.repository');
+  $pending = $repository->pending((int) $account->id());
+  if (!$pending || !($notice = $repository->load($pending[0]))) {
+    return;
+  }
+
+  $author = \Drupal::entityTypeManager()->getStorage('user')->load($notice->uid);
+  $more = count($pending) > 1
+    ? \Drupal::translation()->formatPlural(count($pending) - 1, '1 more waiting', '@count more waiting')
+    : '';
+
+  $form = \Drupal::formBuilder()->getForm(AcknowledgeForm::class, (int) $notice->id);
+  $form['#action'] = Url::fromRoute('acknowledgement_notices.acknowledge', ['notice' => $notice->id], [
+    'query' => \Drupal::destination()->getAsArray(),
+  ])->toString();
+
+  $page_bottom['acknowledgement_notices'] += [
+    '#attached' => ['library' => ['acknowledgement_notices/overlay']],
+    'overlay' => [
+      '#type' => 'container',
+      '#attributes' => [
+        'class' => ['ack-notice-overlay'],
+        'role' => 'alertdialog',
+        'aria-modal' => 'true',
+        'aria-labelledby' => 'ack-notice-title',
+      ],
+      'dialog' => [
+        '#type' => 'container',
+        '#attributes' => ['class' => ['ack-notice-dialog']],
+        'header' => [
+          '#markup' => Markup::create('<div class="ack-notice-dialog__header"><span>' . t('Notice') . '</span><span>' . $more . '</span></div>'),
+        ],
+        'body' => [
+          '#markup' => Markup::create(
+            '<div class="ack-notice-dialog__body">'
+            . '<h2 id="ack-notice-title">' . Html::escape($notice->title) . '</h2>'
+            . '<p class="ack-notice-dialog__meta">' . t('From %author, @date', [
+              '%author' => $author ? $author->getDisplayName() : t('a former user'),
+              '@date' => \Drupal::service('date.formatter')->format((int) $notice->created, 'short'),
+            ]) . '</p>'
+            . acknowledgement_notices_text_to_html($notice->message)
+            . '</div>'
+          ),
+        ],
+        'footer' => [
+          '#type' => 'container',
+          '#attributes' => ['class' => ['ack-notice-dialog__footer']],
+          'form' => $form,
+        ],
+      ],
+    ],
+  ];
+}
+
+/**
+ * Implements hook_user_delete().
+ */
+function acknowledgement_notices_user_delete(UserInterface $account): void {
+  \Drupal::service('acknowledgement_notices.repository')->forgetUser((int) $account->id());
+}
+
+/**
+ * Plain text to HTML: escaped, blank lines become paragraphs.
+ */
+function acknowledgement_notices_text_to_html(string $text): string {
+  $paragraphs = preg_split('/\R{2,}/', trim($text)) ?: [];
+
+  return implode('', array_map(
+    static fn (string $p): string => '<p>' . nl2br(Html::escape($p)) . '</p>',
+    $paragraphs,
+  ));
+}

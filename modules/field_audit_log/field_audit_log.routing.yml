@@ -1,0 +1,14 @@
+field_audit_log.report:
+  path: '/admin/reports/field-audit-log'
+  defaults:
+    _controller: '\Drupal\field_audit_log\Controller\AuditLogController::report'
+    _title: 'Field audit log'
+  requirements:
+    _permission: 'view field audit log'
+field_audit_log.settings:
+  path: '/admin/config/system/field-audit-log'
+  defaults:
+    _form: '\Drupal\field_audit_log\Form\SettingsForm'
+    _title: 'Field audit log'
+  requirements:
+    _permission: 'administer field audit log'

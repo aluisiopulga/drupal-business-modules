@@ -1,0 +1,7 @@
+send acknowledgement notices:
+  title: 'Send acknowledgement notices'
+  description: 'Send notices to everyone or to selected users, and edit or delete your own notices until someone acknowledges them.'
+administer acknowledgement notices:
+  title: 'Administer acknowledgement notices'
+  description: 'See every notice and who acknowledged it, and edit or delete any notice until someone acknowledges it.'
+  restrict access: true

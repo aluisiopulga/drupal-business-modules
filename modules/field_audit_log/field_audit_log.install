@@ -1,0 +1,78 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for Field Audit Log.
+ */
+
+declare(strict_types=1);
+
+/**
+ * Implements hook_schema().
+ *
+ * A table of its own instead of entity revisions: a revision stores the whole
+ * entity on every save and says nothing about who deleted it or from which
+ * page. This table answers the questions people actually ask (who, when,
+ * where, from what to what) and survives the deletion of the entity: the
+ * "delete" row is the only trace left of who deleted it.
+ */
+function field_audit_log_schema(): array {
+  return [
+    'field_audit_log' => [
+      'description' => 'One row per create, update or delete of tracked content.',
+      'fields' => [
+        'id' => ['type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE],
+        'entity_type' => ['type' => 'varchar_ascii', 'length' => 32, 'not null' => TRUE, 'default' => ''],
+        'entity_id' => [
+          'description' => 'No foreign key on purpose: the row outlives the entity.',
+          'type' => 'varchar_ascii',
+          'length' => 128,
+          'not null' => TRUE,
+          'default' => '',
+        ],
+        'bundle' => ['type' => 'varchar_ascii', 'length' => 128, 'not null' => TRUE, 'default' => ''],
+        'label' => [
+          'description' => 'The entity label at the time of the event.',
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => TRUE,
+          'default' => '',
+        ],
+        'action' => [
+          'description' => 'create, update or delete.',
+          'type' => 'varchar_ascii',
+          'length' => 16,
+          'not null' => TRUE,
+          'default' => '',
+        ],
+        'uid' => [
+          'description' => 'Who was logged in. 0 means the system (cron, drush without a user).',
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+        ],
+        'timestamp' => ['type' => 'int', 'not null' => TRUE, 'default' => 0],
+        'path' => [
+          'description' => 'Where it happened: the page path, or "cli".',
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => TRUE,
+          'default' => '',
+        ],
+        'changes' => [
+          'description' => 'JSON: {field_name: [before, after]}. Before is null on create, after is null on delete.',
+          'type' => 'text',
+          'size' => 'big',
+          'not null' => FALSE,
+        ],
+      ],
+      'primary key' => ['id'],
+      'indexes' => [
+        'entity' => ['entity_type', 'entity_id', 'timestamp'],
+        'timestamp' => ['timestamp'],
+        'uid' => ['uid'],
+      ],
+    ],
+  ];
+}

@@ -1,0 +1,46 @@
+acknowledgement_notices.list:
+  path: '/notices'
+  defaults:
+    _controller: '\Drupal\acknowledgement_notices\Controller\NoticeController::list'
+    _title: 'Notices'
+  requirements:
+    _user_is_logged_in: 'TRUE'
+acknowledgement_notices.add:
+  path: '/notices/add'
+  defaults:
+    _form: '\Drupal\acknowledgement_notices\Form\NoticeForm'
+    _title: 'Send a notice'
+  requirements:
+    _permission: 'send acknowledgement notices'
+acknowledgement_notices.view:
+  path: '/notices/{notice}'
+  defaults:
+    _controller: '\Drupal\acknowledgement_notices\Controller\NoticeController::view'
+    _title: 'Notice'
+  requirements:
+    notice: '\d+'
+    _custom_access: '\Drupal\acknowledgement_notices\Controller\NoticeController::accessView'
+acknowledgement_notices.edit:
+  path: '/notices/{notice}/edit'
+  defaults:
+    _form: '\Drupal\acknowledgement_notices\Form\NoticeForm'
+    _title: 'Edit notice'
+  requirements:
+    notice: '\d+'
+    _custom_access: '\Drupal\acknowledgement_notices\Controller\NoticeController::accessManage'
+acknowledgement_notices.delete:
+  path: '/notices/{notice}/delete'
+  defaults:
+    _form: '\Drupal\acknowledgement_notices\Form\DeleteNoticeForm'
+    _title: 'Delete notice'
+  requirements:
+    notice: '\d+'
+    _custom_access: '\Drupal\acknowledgement_notices\Controller\NoticeController::accessManage'
+acknowledgement_notices.acknowledge:
+  path: '/notices/{notice}/acknowledge'
+  defaults:
+    _form: '\Drupal\acknowledgement_notices\Form\AcknowledgeForm'
+    _title: 'Acknowledge notice'
+  requirements:
+    notice: '\d+'
+    _custom_access: '\Drupal\acknowledgement_notices\Controller\NoticeController::accessAcknowledge'

@@ -1,0 +1,42 @@
+/* Full-screen overlay. Pure CSS: it works even when JavaScript is blocked. */
+.ack-notice-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.6);
+}
+.ack-notice-dialog {
+  width: min(40rem, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #222;
+  box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.3);
+}
+.ack-notice-dialog__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid #ddd;
+  font-size: 0.875rem;
+  color: #555;
+}
+.ack-notice-dialog__body {
+  padding: 1.25rem;
+}
+.ack-notice-dialog__body h2 {
+  margin-top: 0;
+}
+.ack-notice-dialog__meta {
+  font-size: 0.875rem;
+  color: #555;
+}
+.ack-notice-dialog__footer {
+  padding: 0 1.25rem 1.25rem;
+}

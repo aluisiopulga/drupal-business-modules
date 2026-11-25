@@ -1,0 +1,9 @@
+name: 'Flexible Decimal Widget'
+type: module
+description: 'A widget for decimal fields that accepts comma or dot as decimal separator (1234,56 or 1234.56), optional thousands separators, and validates against the field precision instead of browser limits.'
+package: 'Field types'
+core_version_requirement: ^10.3 || ^11
+php: 8.1
+version: '1.0.0'
+dependencies:
+  - drupal:field

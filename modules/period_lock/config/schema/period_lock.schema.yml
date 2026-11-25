@@ -1,0 +1,29 @@
+period_lock.settings:
+  type: config_object
+  label: 'Period lock settings'
+  mapping:
+    closed_through:
+      type: string
+      label: 'Periods are closed up to and including this date (YYYY-MM-DD). Empty means nothing is locked.'
+    lock_existing:
+      type: boolean
+      label: 'Also block editing and deleting existing content in closed periods'
+    targets:
+      type: sequence
+      label: 'Locked bundles and the date fields that decide their period'
+      sequence:
+        type: mapping
+        label: 'Target'
+        mapping:
+          entity_type:
+            type: string
+            label: 'Entity type'
+          bundle:
+            type: string
+            label: 'Bundle'
+          fields:
+            type: sequence
+            label: 'Date fields'
+            sequence:
+              type: string
+              label: 'Field name'

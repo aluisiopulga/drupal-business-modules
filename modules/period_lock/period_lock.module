@@ -1,0 +1,105 @@
+<?php
+
+/**
+ * @file
+ * Locks content dated in closed accounting periods.
+ *
+ * Two layers, so the lock cannot be skipped by using a different screen:
+ * - Access (hook_entity_access): edit and delete are forbidden for existing
+ *   content in a closed period. This covers the edit and delete buttons,
+ *   direct URLs, bulk actions and any code that checks access.
+ * - Validation (the PeriodLock entity constraint): refuses new content dated
+ *   in a closed period, and dates moved into one, wherever entities are
+ *   validated (forms, REST, JSON:API).
+ *
+ * Code that saves entities without validating them (custom scripts, drush
+ * php) is not checked, on purpose: that is how administrators fix data.
+ */
+
+declare(strict_types=1);
+
+use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Access\AccessResultInterface;
+use Drupal\Core\Entity\ContentEntityFormInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\FieldableEntityInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Session\AccountInterface;
+
+/**
+ * Implements hook_help().
+ */
+function period_lock_help(string $route_name, RouteMatchInterface $route_match): ?string {
+  if ($route_name === 'help.page.period_lock' || $route_name === 'period_lock.settings') {
+    return '<p>' . t('Choose the content types and the date fields that decide which accounting period a record belongs to, then set the last closed day. Records dated on or before that day cannot be created, edited or deleted, except by users with the "Bypass period lock" permission. Moving the date backwards reopens periods and needs the "Reopen closed periods" permission.') . '</p>';
+  }
+
+  return NULL;
+}
+
+/**
+ * Implements hook_entity_type_alter().
+ */
+function period_lock_entity_type_alter(array &$entity_types): void {
+  /** @var \Drupal\Core\Entity\EntityTypeInterface[] $entity_types */
+  foreach ($entity_types as $entity_type) {
+    if ($entity_type->entityClassImplements(FieldableEntityInterface::class)) {
+      $entity_type->addConstraint('PeriodLock');
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_access().
+ */
+function period_lock_entity_access(EntityInterface $entity, string $operation, AccountInterface $account): AccessResultInterface {
+  if (!in_array($operation, ['update', 'delete'], TRUE)) {
+    return AccessResult::neutral();
+  }
+
+  /** @var \Drupal\period_lock\PeriodLockChecker $checker */
+  $checker = \Drupal::service('period_lock.checker');
+  if (!$checker->fieldsFor($entity)) {
+    return AccessResult::neutral()->addCacheableDependency($checker->config());
+  }
+
+  $result = $checker->isLocked($entity) && !$checker->canBypass($account)
+    ? AccessResult::forbidden(sprintf('This content belongs to a closed period (up to %s).', $checker->closedThrough()))
+    : AccessResult::neutral();
+
+  return $result
+    ->addCacheableDependency($checker->config())
+    ->addCacheableDependency($entity)
+    ->cachePerPermissions();
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Users who bypass the lock can still open closed content. Tell them so
+ * they don't change a closed period by accident.
+ */
+function period_lock_form_alter(array &$form, FormStateInterface $form_state, string $form_id): void {
+  $form_object = $form_state->getFormObject();
+  if (!$form_object instanceof ContentEntityFormInterface) {
+    return;
+  }
+
+  /** @var \Drupal\period_lock\PeriodLockChecker $checker */
+  $checker = \Drupal::service('period_lock.checker');
+  $entity = $form_object->getEntity();
+  if ($entity->isNew() || !$checker->isInClosedPeriod($entity)) {
+    return;
+  }
+
+  $form['period_lock_notice'] = [
+    '#theme' => 'status_messages',
+    '#message_list' => [
+      'warning' => [
+        t('This content belongs to a closed period (up to %date). Changes here alter figures that were already closed.', ['%date' => $checker->closedThrough()]),
+      ],
+    ],
+    '#weight' => -1000,
+  ];
+}

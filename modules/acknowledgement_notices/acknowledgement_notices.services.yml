@@ -1,0 +1,5 @@
+services:
+  acknowledgement_notices.repository:
+    class: Drupal\acknowledgement_notices\NoticeRepository
+    arguments: ['@database', '@datetime.time']
+  Drupal\acknowledgement_notices\NoticeRepository: '@acknowledgement_notices.repository'

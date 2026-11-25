@@ -1,0 +1,6 @@
+acknowledgement_notices.list:
+  title: 'Notices'
+  description: 'Notices you received and sent.'
+  route_name: acknowledgement_notices.list
+  menu_name: account
+  weight: -10

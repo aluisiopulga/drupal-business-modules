@@ -1,0 +1,10 @@
+field_audit_log.report:
+  title: 'Field audit log'
+  description: 'Who changed what, when, and the values before and after.'
+  route_name: field_audit_log.report
+  parent: system.admin_reports
+field_audit_log.settings:
+  title: 'Field audit log'
+  description: 'Choose which content is tracked.'
+  route_name: field_audit_log.settings
+  parent: system.admin_config_system

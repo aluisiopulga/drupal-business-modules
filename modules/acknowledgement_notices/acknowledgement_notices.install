@@ -1,0 +1,86 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for Acknowledgement Notices.
+ */
+
+declare(strict_types=1);
+
+/**
+ * Implements hook_schema().
+ *
+ * Two tables instead of an entity type: a notice has no configurable fields,
+ * no revisions and no need for Views, so plain tables keep it simple.
+ *
+ * Recipients are stored one row per person when the notice is sent. Even for
+ * "everyone", the list is whoever was active at that moment: the history then
+ * answers who had to read it, and people who join later don't inherit old
+ * notices.
+ */
+function acknowledgement_notices_schema(): array {
+  return [
+    'ack_notice' => [
+      'description' => 'Notices that recipients must acknowledge.',
+      'fields' => [
+        'id' => ['type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE],
+        'uid' => [
+          'description' => 'Author.',
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+        ],
+        'title' => ['type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''],
+        'message' => [
+          'description' => 'Plain text. Line breaks become paragraphs; HTML is not interpreted.',
+          'type' => 'text',
+          'size' => 'medium',
+          'not null' => TRUE,
+        ],
+        'everyone' => [
+          'description' => '1 when sent to every active user.',
+          'type' => 'int',
+          'size' => 'tiny',
+          'not null' => TRUE,
+          'default' => 0,
+        ],
+        'created' => ['type' => 'int', 'not null' => TRUE, 'default' => 0],
+        'changed' => [
+          'description' => 'Last edit of the text; 0 when never edited.',
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 0,
+        ],
+        'deleted' => [
+          'description' => 'When it was deleted; 0 while active. Rows are kept so the history stays.',
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 0,
+        ],
+      ],
+      'primary key' => ['id'],
+      'indexes' => [
+        'uid' => ['uid'],
+        'created' => ['created'],
+      ],
+    ],
+    'ack_notice_recipient' => [
+      'description' => 'Who received each notice, and when they acknowledged it.',
+      'fields' => [
+        'notice_id' => ['type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE],
+        'uid' => ['type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE],
+        'acknowledged' => [
+          'description' => 'When the user acknowledged it; 0 while pending.',
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 0,
+        ],
+      ],
+      'primary key' => ['notice_id', 'uid'],
+      'indexes' => [
+        'pending' => ['uid', 'acknowledged'],
+      ],
+    ],
+  ];
+}

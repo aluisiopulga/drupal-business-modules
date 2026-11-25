@@ -1,0 +1,7 @@
+period_lock.settings:
+  path: '/admin/config/content/period-lock'
+  defaults:
+    _form: '\Drupal\period_lock\Form\SettingsForm'
+    _title: 'Period lock'
+  requirements:
+    _permission: 'administer period lock'

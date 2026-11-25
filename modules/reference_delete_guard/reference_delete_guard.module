@@ -1,0 +1,133 @@
+<?php
+
+/**
+ * @file
+ * Prevents deleting referenced content.
+ *
+ * Deleting an entity that other records still reference leaves those records
+ * pointing to nothing: reports show empty rows and totals stop adding up.
+ * For the bundles chosen in the settings:
+ *
+ * 1. Delete access is forbidden while anything references the entity. This
+ *    covers the Delete button, the /delete URL and bulk actions.
+ * 2. The edit form explains why there is no Delete button.
+ * 3. Users who bypass access checks (administrators) still reach the delete
+ *    form, but it explains the problem and has no confirm button.
+ * 4. Bulk deletion refuses the whole batch if one item is protected.
+ *
+ * Deleting from code or drush is not checked: that is how an administrator
+ * cleans up after reassigning the references.
+ */
+
+declare(strict_types=1);
+
+use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Access\AccessResultInterface;
+use Drupal\Core\Entity\EntityFormInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Session\AccountInterface;
+
+/**
+ * Implements hook_help().
+ */
+function reference_delete_guard_help(string $route_name, RouteMatchInterface $route_match): ?string {
+  if ($route_name === 'help.page.reference_delete_guard' || $route_name === 'reference_delete_guard.settings') {
+    return '<p>' . t('Content of the selected types cannot be deleted while other content references it through an entity reference field. Reassign or delete the referencing content first.') . '</p>';
+  }
+
+  return NULL;
+}
+
+/**
+ * Implements hook_entity_access().
+ */
+function reference_delete_guard_entity_access(EntityInterface $entity, string $operation, AccountInterface $account): AccessResultInterface {
+  /** @var \Drupal\reference_delete_guard\ReferenceCounter $counter */
+  $counter = \Drupal::service('reference_delete_guard.counter');
+  if ($operation !== 'delete' || !$counter->isProtected($entity)) {
+    return AccessResult::neutral()->addCacheableDependency($counter->config());
+  }
+
+  $counts = $counter->count($entity);
+  $result = $counts
+    ? AccessResult::forbidden('Referenced by ' . $counter->summarize($counts) . '.')
+    : AccessResult::neutral();
+
+  return $result
+    ->addCacheableDependency($counter->config())
+    ->addCacheableDependency($entity)
+    ->addCacheTags($counter->cacheTags($entity->getEntityTypeId()));
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function reference_delete_guard_form_alter(array &$form, FormStateInterface $form_state, string $form_id): void {
+  if ($form_id === 'entity_delete_multiple_confirm_form') {
+    $form['#validate'][] = 'reference_delete_guard_validate_bulk_delete';
+    return;
+  }
+
+  $form_object = $form_state->getFormObject();
+  if (!$form_object instanceof EntityFormInterface) {
+    return;
+  }
+  $entity = $form_object->getEntity();
+  /** @var \Drupal\reference_delete_guard\ReferenceCounter $counter */
+  $counter = \Drupal::service('reference_delete_guard.counter');
+  if ($entity->isNew() || !$counter->isProtected($entity) || !($counts = $counter->count($entity))) {
+    return;
+  }
+
+  $arguments = ['%label' => $entity->label(), '@references' => $counter->summarize($counts)];
+
+  if ($form_object->getOperation() === 'delete') {
+    $form['description'] = [
+      '#markup' => '<p>' . t('%label cannot be deleted: @references still reference it. Deleting it would leave them pointing to nothing.', $arguments) . '</p>'
+      . '<p>' . t('To fix its name or details, edit it instead. To delete it, reassign or delete the referencing content first.') . '</p>',
+    ];
+    $form['actions']['submit']['#access'] = FALSE;
+    return;
+  }
+
+  $form['reference_delete_guard_notice'] = [
+    '#theme' => 'status_messages',
+    '#message_list' => [
+      'status' => [t('This item cannot be deleted: @references reference it. To fix its details, edit and save it here instead of creating a new one.', $arguments)],
+    ],
+    '#weight' => -1000,
+  ];
+  unset($form['actions']['delete']);
+}
+
+/**
+ * Validation for core's bulk delete confirmation.
+ *
+ * Refuses the whole batch when any selected item is still referenced, so
+ * nothing is half-deleted.
+ */
+function reference_delete_guard_validate_bulk_delete(array &$form, FormStateInterface $form_state): void {
+  $entity_type_id = (string) \Drupal::routeMatch()->getParameter('entity_type_id');
+  if ($entity_type_id === '') {
+    return;
+  }
+
+  $selection = \Drupal::service('tempstore.private')
+    ->get('entity_delete_multiple_confirm')
+    ->get(\Drupal::currentUser()->id() . ':' . $entity_type_id) ?? [];
+
+  /** @var \Drupal\reference_delete_guard\ReferenceCounter $counter */
+  $counter = \Drupal::service('reference_delete_guard.counter');
+  $blocked = [];
+  foreach (\Drupal::entityTypeManager()->getStorage($entity_type_id)->loadMultiple(array_keys($selection)) as $entity) {
+    if ($counter->isProtected($entity) && ($counts = $counter->count($entity))) {
+      $blocked[] = $entity->label() . ' (' . $counter->summarize($counts) . ')';
+    }
+  }
+
+  if ($blocked) {
+    $form_state->setErrorByName('', t('Nothing was deleted. These items are still referenced: @list.', ['@list' => implode('; ', $blocked)]));
+  }
+}

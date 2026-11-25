@@ -1,0 +1,8 @@
+view field audit log:
+  title: 'View field audit log'
+  description: 'See the change history of tracked content, including old values.'
+  restrict access: true
+administer field audit log:
+  title: 'Administer field audit log'
+  description: 'Choose which content is tracked and how long entries are kept.'
+  restrict access: true

@@ -1,0 +1,5 @@
+period_lock.settings:
+  title: 'Period lock'
+  description: 'Lock content in closed accounting periods.'
+  route_name: period_lock.settings
+  parent: system.admin_config_content

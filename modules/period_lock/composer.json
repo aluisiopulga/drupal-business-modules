@@ -1,0 +1,29 @@
+{
+    "name": "aluisiopulga/period_lock",
+    "description": "Locks content dated in closed accounting periods: no creating, editing or deleting records on or before the closing date.",
+    "type": "drupal-module",
+    "license": "GPL-2.0-or-later",
+    "keywords": [
+        "drupal",
+        "accounting",
+        "period-lock",
+        "financial",
+        "access-control"
+    ],
+    "authors": [
+        {
+            "name": "Aluisio Ricardo Marques Pulga",
+            "homepage": "https://www.drupal.org/u/aluisiopulga",
+            "role": "Maintainer"
+        }
+    ],
+    "homepage": "https://github.com/aluisiopulga/drupal-business-modules",
+    "support": {
+        "issues": "https://github.com/aluisiopulga/drupal-business-modules/issues",
+        "source": "https://github.com/aluisiopulga/drupal-business-modules"
+    },
+    "require": {
+        "php": ">=8.1",
+        "drupal/core": "^10.3 || ^11"
+    }
+}

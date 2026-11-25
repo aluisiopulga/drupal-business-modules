@@ -1,0 +1,7 @@
+reference_delete_guard.settings:
+  path: '/admin/config/content/reference-delete-guard'
+  defaults:
+    _form: '\Drupal\reference_delete_guard\Form\SettingsForm'
+    _title: 'Reference delete guard'
+  requirements:
+    _permission: 'administer reference delete guard'

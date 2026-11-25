@@ -1,0 +1,10 @@
+name: 'Period Lock'
+type: module
+description: 'Locks content dated in closed accounting periods: nobody creates, edits or deletes records on or before the closing date, unless they may bypass the lock.'
+package: 'Business tools'
+core_version_requirement: ^10.3 || ^11
+php: 8.1
+version: '1.0.0'
+configure: period_lock.settings
+dependencies:
+  - drupal:datetime

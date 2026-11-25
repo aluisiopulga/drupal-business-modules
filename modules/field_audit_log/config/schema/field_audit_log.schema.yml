@@ -1,0 +1,13 @@
+field_audit_log.settings:
+  type: config_object
+  label: 'Field audit log settings'
+  mapping:
+    tracked:
+      type: sequence
+      label: 'Tracked bundles'
+      sequence:
+        type: string
+        label: 'Entity type and bundle, as "entity_type:bundle"'
+    retention_days:
+      type: integer
+      label: 'Delete entries older than this many days (0 keeps them forever)'

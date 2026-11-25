@@ -1,0 +1,28 @@
+{
+    "name": "aluisiopulga/acknowledgement_notices",
+    "description": "Internal notices that recipients must acknowledge before using the site again, with a record of who acknowledged and when.",
+    "type": "drupal-module",
+    "license": "GPL-2.0-or-later",
+    "keywords": [
+        "drupal",
+        "notifications",
+        "acknowledgement",
+        "internal-communication"
+    ],
+    "authors": [
+        {
+            "name": "Aluisio Ricardo Marques Pulga",
+            "homepage": "https://www.drupal.org/u/aluisiopulga",
+            "role": "Maintainer"
+        }
+    ],
+    "homepage": "https://github.com/aluisiopulga/drupal-business-modules",
+    "support": {
+        "issues": "https://github.com/aluisiopulga/drupal-business-modules/issues",
+        "source": "https://github.com/aluisiopulga/drupal-business-modules"
+    },
+    "require": {
+        "php": ">=8.1",
+        "drupal/core": "^10.3 || ^11"
+    }
+}
